@@ -1,0 +1,27 @@
+{
+    "name": "SiPV.Config",
+    "rootNamespace": "",
+    "references": [
+        "GUID:9e24947de15b9834991c9d8411ea37cf",
+        "SiPV.Utilities",
+        "SiPV.Debugging",
+        "SiPV.Event",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:84651a3751eca9349aac36a66bba901b",
+        "GUID:fe25561d224ed4743af4c60938a59d0b",
+        "GUID:5540e30183c82e84b954c033c388e06c",
+        "GUID:4077802dea91b4b6d878b48b4160bd81",
+        "GUID:9d6c7830d9ab746a7a12f144bdeeee7c",
+        "GUID:ea86e1e2f3573eb4192e1dd536f1057d",
+        "GUID:69448af7b92c7f342b298e06a37122aa"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

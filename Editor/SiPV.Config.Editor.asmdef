@@ -1,0 +1,29 @@
+{
+    "name": "SiPV.Config.Editor",
+    "rootNamespace": "",
+    "references": [
+        "SiPV.Config",
+        "GUID:69448af7b92c7f342b298e06a37122aa",
+        "SiPV.Utilities",
+        "SiPV.Debugging"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Sirenix.OdinInspector.Editor.dll",
+        "Sirenix.Utilities.Editor.dll",
+        "Sirenix.Utilities.dll",
+        "Sirenix.Serialization.dll",
+        "Sirenix.OdinInspector.Attributes.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "ODIN_INSPECTOR"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
