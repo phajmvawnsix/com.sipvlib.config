@@ -49,12 +49,12 @@ namespace SiPVLib.Config
         /// <summary>
         /// Checks if the resources configuration is initialized.
         /// </summary>
-        private bool IsInitializedResources => string.IsNullOrWhiteSpace(_configResourcesPath) || _configResources.IsInitialized;
+        private bool IsInitializedResources => string.IsNullOrWhiteSpace(_configResourcesPath) || (_configResources != null && _configResources.IsInitialized);
 
         /// <summary>
         /// Checks if the addressable configuration is initialized.
         /// </summary>
-        private bool IsInitializedAddressable => _configAddressableRef == null || _configAddressable.IsInitialized;
+        private bool IsInitializedAddressable => _configAddressableRef == null || (_configAddressable != null && _configAddressable.IsInitialized);
 
         /// <summary>
         /// Checks if the remote configuration is initialized.
