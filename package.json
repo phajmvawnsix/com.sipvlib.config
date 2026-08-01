@@ -1,6 +1,6 @@
 {
   "name": "com.sipvlib.config",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "displayName": "SiPVLib Config",
   "description": "A ScriptableObject-based game config system (GameConfig/ConfigManager/ConfigRoot) supporting Local/Resources/Addressable/RemoteConfig-backed data sources, with an optional Odin Inspector-powered editor tool (MasterWindow) for authoring configs.",
   "unity": "6000.3",

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using SiPVLib.Config.Configs;
 using SiPVLib.Utilities;
 using UnityEngine;
@@ -131,13 +132,13 @@ namespace SiPVLib.Config
                 return true; // Already initialized
             }
 
-            var resourcesPath = manager._configResourcesPath;
+            var resourcesPath = manager._configResourcesPath.Replace(".asset", "");
 
             // Get resources relative path
             var resourcesIndex = resourcesPath.LastIndexOf("Resources/", StringComparison.Ordinal);
             if (resourcesIndex >= 0)
             {
-                resourcesPath = resourcesPath.Skip(resourcesIndex + "Resources/".Length).ToArray().ToString();
+                resourcesPath = new StringBuilder().Append(resourcesPath.Skip(resourcesIndex + "Resources/".Length).ToArray()).ToString();
             }
 
             // Load ConfigRoot from Resources
