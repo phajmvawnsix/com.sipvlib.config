@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace PipaPlanet.PipaPlanet.Scripts.Utilities
 {
-    public class PrefabConfig : AssetConfig<GameObject>
+    public class AudioClipConfig : AssetConfig<AudioClip>
     {
         
     }
