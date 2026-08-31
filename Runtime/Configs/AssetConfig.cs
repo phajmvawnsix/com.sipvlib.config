@@ -5,10 +5,28 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
+namespace SiPVLib.Config.Configs
+{
+    /// <summary>
+    /// Implemented by <see cref="PipaPlanet.PipaPlanet.Scripts.Utilities.AssetConfig{T}"/> so
+    /// <see cref="ConfigRoot.Init"/> can preload assets flagged for startup loading without
+    /// depending on the generic asset type.
+    /// </summary>
+    public interface IAssetPreloadable
+    {
+        bool LoadAssetOnStartup { get; }
+        UniTask PreloadAssetAsync();
+    }
+}
+
 namespace PipaPlanet.PipaPlanet.Scripts.Utilities
 {
-    public abstract class AssetConfig<T> : GameConfig where T : Object
+    public abstract class AssetConfig<T> : GameConfig, IAssetPreloadable where T : Object
     {
+        [Tooltip("If enabled, the asset is loaded during this config's ConfigLocation initialization " +
+                 "(ConfigManager.InitXXX). Otherwise it's loaded lazily at runtime via GetAsset()/GetAssetAsync().")]
+        [SerializeField] private bool _loadAssetOnStartup;
+
         [ShowIf(nameof(_storeLocation), ConfigLocation.Local)] [SerializeField]
         private T _asset;
 
@@ -21,6 +39,8 @@ namespace PipaPlanet.PipaPlanet.Scripts.Utilities
         private AssetReference _addressableReference;
         
         private UniTask<T> _loadTask;
+        
+        public bool LoadAssetOnStartup => _loadAssetOnStartup;
 
         public T Asset
         {
@@ -35,9 +55,15 @@ namespace PipaPlanet.PipaPlanet.Scripts.Utilities
 
                 return _asset;
             }
-#if UNITY_EDITOR
-            set { _asset = value; }
-#endif
+        }
+
+        /// <summary>Creates a runtime-only config instance with its asset already set. Local store location.</summary>
+        protected static TConfig CreateWithAsset<TConfig>(T asset) where TConfig : AssetConfig<T>
+        {
+            var config = CreateInstance<TConfig>();
+            config._asset = asset;
+            config._storeLocation = ConfigLocation.Local;
+            return config;
         }
 
         private async UniTask<T> LoadAssetAsync()
@@ -51,20 +77,27 @@ namespace PipaPlanet.PipaPlanet.Scripts.Utilities
             {
                 var handle = _addressableReference.LoadAssetAsync<T>();
                 await handle.Task;
-                return handle.Result;
+                _asset = handle.Result;
+                return _asset;
             }
 
             if (_storeLocation == ConfigLocation.Resources)
             {
                 var resourcePath = _assetId; // Assuming _assetId is the path in Resources
                 var resource = await Resources.LoadAsync<T>(resourcePath);
-                return (T)resource;
+                _asset = (T)resource;
+                return _asset;
             }
 
             // Handle other storage locations if needed
             return null;
         }
-        
+
+        public async UniTask PreloadAssetAsync()
+        {
+            await GetAssetAsync();
+        }
+
         public async UniTask<T> GetAssetAsync()
         {
             if (_asset)

@@ -86,9 +86,30 @@ namespace SiPVLib.Config
                 _configsLoadedByType[kvp.Key] = kvp.Value.ToArray();
             }
 
+            await PreloadStartupAssets();
+
             IsInitialized = true;
             
             return true;
+        }
+
+        /// <summary>Awaits <see cref="IAssetPreloadable.PreloadAssetAsync"/> for every loaded config
+        /// that opted into <see cref="IAssetPreloadable.LoadAssetOnStartup"/>, in parallel.</summary>
+        private async UniTask PreloadStartupAssets()
+        {
+            List<UniTask> preloadTasks = null;
+            foreach (var config in _configsLoaded.Values)
+            {
+                if (config is not IAssetPreloadable { LoadAssetOnStartup: true } preloadable) continue;
+
+                preloadTasks ??= new List<UniTask>();
+                preloadTasks.Add(preloadable.PreloadAssetAsync());
+            }
+
+            if (preloadTasks != null)
+            {
+                await UniTask.WhenAll(preloadTasks);
+            }
         }
 
         /// <summary>Looks up a config by Id, cache-first, falling back to a linear scan of <see cref="_configsRef"/>.</summary>
