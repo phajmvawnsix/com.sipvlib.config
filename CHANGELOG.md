@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.1] - 2026-09-02
+
+Editor performance fixes:
+
+- `ConfigRefAttributeDrawer.HandleDragAndDrop` logged via `CustomLog` on its early-out paths, which
+  are hit on **every repaint of every `[ConfigRef]` field** — each call captured a Unity stack trace
+  and flooded the console. The event-type check now runs before the rect test and both early-outs
+  are silent.
+- `ConfigRootEditorSync.HasDuplicateId` backs an Odin `ValidateInput` on `GameConfig._id`, so it runs
+  on every keystroke in the Id field, but it looped all four `ConfigLocation`s doing a separate
+  `FindAssets` + `LoadAssetAtPath` sweep per location with no early exit — and with
+  `onlyCheckRootFolders` disabled that became four identical whole-project scans. Now one scan,
+  returning at the first match.
+
 ## [1.2.0] - 2026-09-02
 
 Add `MasterWindowSettings.onlyCheckRootFolders` (default `true`): when disabled, `ConfigRootEditorSync`

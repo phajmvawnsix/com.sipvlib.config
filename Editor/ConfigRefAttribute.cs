@@ -192,17 +192,13 @@ namespace SiPVLib.Config.Editor
             GameConfig currentItem)
         {
             var evt = Event.current;
-            if (!dropRect.Contains(evt.mousePosition))
-            {
-                CustomLog.Log("Mouse is outside the drop area. Ignoring drag event.");
-                return;
-            }
 
-            if (evt.type != EventType.DragUpdated && evt.type != EventType.DragPerform)
-            {
-                CustomLog.Log("Drag event is not allowed.");
-                return;
-            }
+            // Check the event type before the rect test: this runs on every repaint of every
+            // [ConfigRef] field, so the non-drag path must stay allocation- and log-free (a
+            // CustomLog call here captures a stack trace per field per repaint).
+            if (evt.type != EventType.DragUpdated && evt.type != EventType.DragPerform) return;
+
+            if (!dropRect.Contains(evt.mousePosition)) return;
 
             var valid = false;
             GameConfig candidate = null;

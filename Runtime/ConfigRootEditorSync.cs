@@ -1,5 +1,4 @@
 #if UNITY_EDITOR
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -44,14 +43,22 @@ namespace SiPVLib.Config
         {
             if (string.IsNullOrWhiteSpace(id)) return false;
 
-            foreach (ConfigLocation location in Enum.GetValues(typeof(ConfigLocation)))
+            // Backs an Odin ValidateInput on GameConfig._id, so this runs on every keystroke in the
+            // Id field: scan once over all four root folders (or the whole project) rather than once
+            // per ConfigLocation, and stop at the first match instead of loading every config.
+            var settings = MasterWindowSettings.instance;
+            var searchFolders = settings.onlyCheckRootFolders ? settings.AllRootFolders() : null;
+
+            var guids = searchFolders == null
+                ? AssetDatabase.FindAssets("t:GameConfig")
+                : AssetDatabase.FindAssets("t:GameConfig", searchFolders);
+
+            foreach (var guid in guids)
             {
-                foreach (var config in FindConfigsInLocation(location))
+                var config = AssetDatabase.LoadAssetAtPath<GameConfig>(AssetDatabase.GUIDToAssetPath(guid));
+                if (config != null && config != self && config.Id == id)
                 {
-                    if (config != self && config.Id == id)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
 
