@@ -16,6 +16,7 @@ namespace SiPVLib.Config.Editor.MasterWindow
         private string _rootFolderResources;
         private string _rootFolderAddressable;
         private string _rootFolderRemoteConfig;
+        private bool _onlyCheckRootFolders;
 
         private MasterWindowSettings _settings;
 
@@ -38,6 +39,7 @@ namespace SiPVLib.Config.Editor.MasterWindow
             _rootFolderResources = string.IsNullOrEmpty(_settings.rootFolderResources) ? DefaultResourcesRoot : _settings.rootFolderResources;
             _rootFolderAddressable = string.IsNullOrEmpty(_settings.rootFolderAddressable) ? DefaultAddressableRoot : _settings.rootFolderAddressable;
             _rootFolderRemoteConfig = string.IsNullOrEmpty(_settings.rootFolderRemoteConfig) ? DefaultRemoteConfigRoot : _settings.rootFolderRemoteConfig;
+            _onlyCheckRootFolders = _settings.onlyCheckRootFolders;
         }
 
         private void OnGUI()
@@ -63,6 +65,13 @@ namespace SiPVLib.Config.Editor.MasterWindow
 
             // Addressable Root Folder
             DrawFolderSelector("Remote Config Root Folder", ref _rootFolderRemoteConfig, "Select Remote Config Root Folder", "Folder for remote config files");
+
+            EditorGUILayout.Space();
+
+            _onlyCheckRootFolders = EditorGUILayout.ToggleLeft(
+                new GUIContent("Only Check Root Folders",
+                    "When on, config discovery is scoped to each location's root folder. When off, the whole Assets folder is scanned and configs are matched by their own declared Store Location."),
+                _onlyCheckRootFolders);
 
             EditorGUILayout.Space();
             EditorGUILayout.Space();
@@ -126,6 +135,7 @@ namespace SiPVLib.Config.Editor.MasterWindow
             _rootFolderResources = DefaultResourcesRoot;
             _rootFolderAddressable = DefaultAddressableRoot;
             _rootFolderRemoteConfig = DefaultRemoteConfigRoot;
+            _onlyCheckRootFolders = true;
         }
 
         private void SaveSettings()
@@ -134,6 +144,7 @@ namespace SiPVLib.Config.Editor.MasterWindow
             _settings.rootFolderResources = _rootFolderResources;
             _settings.rootFolderAddressable = _rootFolderAddressable;
             _settings.rootFolderRemoteConfig = _rootFolderRemoteConfig;
+            _settings.onlyCheckRootFolders = _onlyCheckRootFolders;
             _settings.SaveSettings();
         }
     }

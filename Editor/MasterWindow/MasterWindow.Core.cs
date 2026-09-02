@@ -40,7 +40,10 @@ namespace SiPVLib.Config.Editor.MasterWindow
         {
             base.Initialize();
             
-            // Listen for Selection.activeObject changes to update menu selection
+            // Listen for Selection.activeObject changes to update menu selection.
+            // Initialize() re-runs on every ForceMenuTreeRebuild(), so unsubscribe first to avoid
+            // stacking duplicate handlers.
+            Selection.selectionChanged -= OnSelection;
             Selection.selectionChanged += OnSelection;
         }
 

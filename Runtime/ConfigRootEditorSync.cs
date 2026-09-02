@@ -90,13 +90,30 @@ namespace SiPVLib.Config
 
         private static List<GameConfig> FindConfigsInLocation(ConfigLocation location)
         {
-            var folder = MasterWindowSettings.instance.GetRootFolder(location);
+            var settings = MasterWindowSettings.instance;
             var result = new List<GameConfig>();
 
-            foreach (var guid in AssetDatabase.FindAssets("t:GameConfig", new[] { folder }))
+            if (settings.onlyCheckRootFolders)
+            {
+                var folder = settings.GetRootFolder(location);
+                foreach (var guid in AssetDatabase.FindAssets("t:GameConfig", new[] { folder }))
+                {
+                    var config = AssetDatabase.LoadAssetAtPath<GameConfig>(AssetDatabase.GUIDToAssetPath(guid));
+                    if (config != null)
+                    {
+                        result.Add(config);
+                    }
+                }
+
+                return result;
+            }
+
+            // OnlyCheckRootFolders disabled: scan the whole project and match by each config's own
+            // declared StoreLocation instead of by folder placement.
+            foreach (var guid in AssetDatabase.FindAssets("t:GameConfig"))
             {
                 var config = AssetDatabase.LoadAssetAtPath<GameConfig>(AssetDatabase.GUIDToAssetPath(guid));
-                if (config != null)
+                if (config != null && config.StoreLocation == location)
                 {
                     result.Add(config);
                 }

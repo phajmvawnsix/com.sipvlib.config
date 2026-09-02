@@ -25,6 +25,14 @@ namespace SiPVLib.Config
         public string rootFolderRemoteConfig = "Assets/Master/RemoteConfig";
         public MenuTreeViewType menuTreeViewType = MenuTreeViewType.Hierarchical;
 
+        /// <summary>
+        /// When true (default), config discovery for a <see cref="ConfigLocation"/> is scoped to
+        /// that location's configured root folder only. When false, the whole <c>Assets</c> folder
+        /// is scanned and configs are matched by their own declared <see cref="GameConfig.StoreLocation"/>
+        /// instead of by folder placement.
+        /// </summary>
+        public bool onlyCheckRootFolders = true;
+
         public string GetRootFolder(ConfigLocation location)
         {
             return location switch

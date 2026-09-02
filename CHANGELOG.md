@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.2.0] - 2026-09-02
+
+Add `MasterWindowSettings.onlyCheckRootFolders` (default `true`): when disabled, `ConfigRootEditorSync`
+discovers configs for a `ConfigLocation` by scanning the whole `Assets` folder and matching each
+`GameConfig`'s own `StoreLocation`, instead of scoping the search to that location's configured root
+folder. Toggle exposed in Master Window Settings.
+
+Fix `MasterWindow` re-subscribing `Selection.selectionChanged` on every `ForceMenuTreeRebuild()`
+(refresh button, menu-tree rebuilds), stacking duplicate handlers and firing `OnSelection` multiple
+times per selection change the longer the window stays open.
+
 ## [1.1.0] - 2026-08-31
 
 Add `AssetConfig.LoadAssetOnStartup`: when enabled, the asset is preloaded during that config's
