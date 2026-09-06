@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.2.2] - 2026-09-03
+
+Lower minimum Unity Editor version to 2022.3 LTS (was 6000.3) and add a `repository`
+field to `package.json`, both required for OpenUPM registry submission.
+
+Pin `com.unity.addressables` to 1.21.19 (was 2.9.1): Addressables 2.x only ships for Unity 6.x, so
+the 2.9.1 pin made this package uninstallable on 2022.3 regardless of the `unity` field. 1.21.19 is
+the version 2022.3 LTS itself ships. Package Manager resolves the *highest* version requested across
+a project, so a Unity 6 project that also depends on Addressables 2.x directly still gets 2.x — this
+pin only sets the floor.
+
 ## [1.2.1] - 2026-09-02
 
 Editor performance fixes:
