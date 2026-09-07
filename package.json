@@ -1,6 +1,6 @@
 {
   "name": "com.sipvlib.config",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "displayName": "SiPVLib Config",
   "description": "A ScriptableObject-based game config system (GameConfig/ConfigManager/ConfigRoot) supporting Local/Resources/Addressable/RemoteConfig-backed data sources, with an optional Odin Inspector-powered editor tool (MasterWindow) for authoring configs.",
   "unity": "2022.3",
@@ -17,10 +17,10 @@
     "config"
   ],
   "dependencies": {
-    "com.sipvlib.debugging": "https://github.com/phajmvawnsix/com.sipvlib.debugging.git",
-    "com.sipvlib.event": "https://github.com/phajmvawnsix/com.sipvlib.event.git",
-    "com.sipvlib.utilities": "https://github.com/phajmvawnsix/com.sipvlib.utilities.git",
-    "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+    "com.sipvlib.debugging": "1.1.1",
+    "com.sipvlib.event": "1.1.2",
+    "com.sipvlib.utilities": "2.0.2",
+    "com.cysharp.unitask": "2.5.11",
     "com.unity.addressables": "1.21.19",
     "com.unity.services.core": "1.18.0",
     "com.unity.services.authentication": "3.6.1",

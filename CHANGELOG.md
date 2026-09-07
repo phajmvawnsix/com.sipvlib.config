@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3] - 2026-09-03
+
+Pin com.sipvlib.debugging/event/utilities and com.cysharp.unitask to semver versions
+(1.1.1/1.1.2/2.0.2/2.5.11) instead of git URLs. OpenUPM's registry rejects a package whose
+dependencies field contains a raw git URL — this is what caused "Unable to add package
+com.sipvlib.config: ... Version 'git+...' is invalid" when installing via the OpenUPM registry.
+
 ## [1.2.2] - 2026-09-03
 
 Lower minimum Unity Editor version to 2022.3 LTS (was 6000.3) and add a `repository`
