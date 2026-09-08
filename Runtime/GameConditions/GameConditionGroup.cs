@@ -1,7 +1,5 @@
 ﻿using System;
-#if ODIN_INSPECTOR
-using Sirenix.OdinInspector;
-#endif
+using Alchemy.Inspector;
 using UnityEngine;
 
 namespace SiPVLib.Config.GameConditions
@@ -32,9 +30,7 @@ namespace SiPVLib.Config.GameConditions
     {
         public GameConditionGroupData[] conditions;
         public bool isAndConditions = true;
-#if ODIN_INSPECTOR
         [HideIf(nameof(isAndConditions))]
-#endif
         public bool isOrConditions;
 
         /// <summary>

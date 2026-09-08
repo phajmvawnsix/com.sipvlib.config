@@ -1,7 +1,7 @@
+using Alchemy.Inspector;
 using Cysharp.Threading.Tasks;
 using SiPVLib.Config;
 using SiPVLib.Config.Configs;
-using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -27,20 +27,23 @@ namespace PipaPlanet.PipaPlanet.Scripts.Utilities
                  "(ConfigManager.InitXXX). Otherwise it's loaded lazily at runtime via GetAsset()/GetAssetAsync().")]
         [SerializeField] private bool _loadAssetOnStartup;
 
-        [ShowIf(nameof(_storeLocation), ConfigLocation.Local)] [SerializeField]
+        [ShowIf(nameof(IsLocalLocation))] [SerializeField]
         private T _asset;
 
-        [HideIf(nameof(_storeLocation), ConfigLocation.Addressable)]
-        [HideIf(nameof(_storeLocation), ConfigLocation.Local)]
+        [ShowIf(nameof(IsResourcesOrRemoteLocation))]
         [SerializeField]
         private string _assetId;
 
-        [ShowIf(nameof(_storeLocation), ConfigLocation.Addressable)] [SerializeField]
+        [ShowIf(nameof(IsAddressableLocation))] [SerializeField]
         private AssetReference _addressableReference;
-        
+
         private UniTask<T> _loadTask;
-        
+
         public bool LoadAssetOnStartup => _loadAssetOnStartup;
+
+        private bool IsLocalLocation => _storeLocation == ConfigLocation.Local;
+        private bool IsAddressableLocation => _storeLocation == ConfigLocation.Addressable;
+        private bool IsResourcesOrRemoteLocation => _storeLocation is ConfigLocation.Resources or ConfigLocation.RemoteConfig;
 
         public T Asset
         {

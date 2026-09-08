@@ -26,11 +26,7 @@ namespace SiPVLib.Config
         [Tooltip("Configuration root for addressable configs.")]
         [SerializeField] private AssetReference _configAddressableRef;
         [Tooltip("Configuration root for resources configs.")]
-#if ODIN_INSPECTOR
-        [SerializeField, Sirenix.OdinInspector.FilePath(Extensions = ".asset", RequireExistingPath = true)] private string _configResourcesPath;
-#else
         [SerializeField] private string _configResourcesPath;
-#endif
 
         /// <summary>
         /// Configuration root loaded from Resources.

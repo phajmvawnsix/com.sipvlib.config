@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using Alchemy.Inspector;
 using Cysharp.Threading.Tasks;
 using SiPVLib.Config.Configs;
 using SiPVLib.Debugging;
 using SiPVLib.Utilities.Extensions;
-#if ODIN_INSPECTOR
-using Sirenix.OdinInspector;
-#endif
 using UnityEngine;
 
 namespace SiPVLib.Config
@@ -24,14 +22,9 @@ namespace SiPVLib.Config
 
         [SerializeField] private List<string> _configsId = new();
 
-#if ODIN_INSPECTOR
         [ShowIf(nameof(CanSerializeRefs))]
         [SerializeField, ReadOnly]
         private List<GameConfig> _configsRef = new();
-#else
-        [SerializeField]
-        private List<GameConfig> _configsRef = new();
-#endif
 
         private readonly Dictionary<string, GameConfig> _configsLoaded = new();
         private readonly Dictionary<Type, GameConfig[]> _configsLoadedByType = new();

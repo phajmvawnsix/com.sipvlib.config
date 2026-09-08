@@ -1,8 +1,5 @@
-﻿using System.IO;
-using System.Linq;
+using System.IO;
 using SiPVLib.Config.Configs;
-using Sirenix.OdinInspector.Editor;
-using Sirenix.Utilities;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,52 +7,7 @@ namespace SiPVLib.Config.Editor.MasterWindow
 {
     public partial class MasterWindow
     {
-        private void AddDragHandles(OdinMenuItem item)
-        {
-            item.OnDrawItem += _ => HandleMenuItemDraw(item);
-        }
-        
-        private void HandleFolderInteractions(OdinMenuItem item)
-        {
-            var currentEvent = Event.current;
-
-            if (!item.Rect.Contains(currentEvent.mousePosition)) return;
-            switch (currentEvent.type)
-            {
-                case EventType.MouseDown when currentEvent.button == 1:
-                    ShowFolderContextMenu(item);
-                    currentEvent.Use();
-                    break;
-                case EventType.MouseDown when currentEvent.button == 0 &&
-                                              currentEvent.clickCount == 2:
-                    item.Toggled = !item.Toggled;
-                    currentEvent.Use();
-                    GUI.changed = true;
-                    break;
-            }
-        }
-
-        private void HandleConfigInteractions(GameConfig config, Rect rect)
-        {
-            var currentEvent = Event.current;
-
-            if (!rect.Contains(currentEvent.mousePosition) || currentEvent.type != EventType.MouseDown ||
-                currentEvent.button != 1) return;
-            
-            var selectedConfigs = MenuTree.Selection.ToArray();
-            if (selectedConfigs.Length > 1)
-            {
-                ShowMultiSelectionContextMenu(selectedConfigs);
-            }
-            else
-            {
-                ShowConfigContextMenu(config);
-            }
-
-            currentEvent.Use();
-        }
-        
-        private void ShowFolderContextMenu(OdinMenuItem folderItem)
+        private void ShowFolderContextMenu(MasterWindowTreeItem folderItem)
         {
             var menu = new GenericMenu();
             menu.AddItem(new GUIContent("Create Config"), false, () => CreateConfig(folderItem));
@@ -80,51 +32,49 @@ namespace SiPVLib.Config.Editor.MasterWindow
             menu.ShowAsContext();
         }
 
-        private void ShowMultiSelectionContextMenu(OdinMenuItem[] items)
+        private void ShowMultiSelectionContextMenu(GameConfig[] configs)
         {
             var menu = new GenericMenu();
-    
+
             menu.AddSeparator("");
             menu.AddItem(new GUIContent("Duplicate Selected"), false, () =>
             {
-                foreach (var item in items)
+                foreach (var config in configs)
                 {
-                    if (item.Value is GameConfig config)
-                    {
-                        DuplicateConfig(config);
-                    }
+                    DuplicateConfig(config);
                 }
             });
             menu.AddItem(new GUIContent("Delete Selected"), false, () =>
             {
                 if (!EditorUtility.DisplayDialog("Delete Config",
-                        $"Are you sure you want to delete selected {items.Length} items?", "Delete", "Cancel")) return;
-                foreach (var item in items)
+                        $"Are you sure you want to delete selected {configs.Length} items?", "Delete", "Cancel")) return;
+
+                foreach (var config in configs)
                 {
-                    if (item.Value is GameConfig config)
-                    {
-                        DeleteConfig(config, false);
-                    }
+                    DeleteConfig(config, false);
                 }
+
+                ForceMenuTreeRebuild();
             });
 
             menu.ShowAsContext();
         }
 
-        private void CreateConfig(OdinMenuItem item)
+        private void CreateConfig(MasterWindowTreeItem folderItem)
         {
-            if (!IsFolder(item)) return;
-
-            var folderPath = GetFolderPath(item);
-            ScriptableObjectCreator.ShowDialog<GameConfig>(folderPath, TrySelectMenuItemWithObject);
+            var folderPath = GetFolderPath(folderItem);
+            ScriptableObjectCreator.ShowDialog<GameConfig>(folderPath, TrySelectConfig);
         }
-        
+
         private void RenameConfig(GameConfig config)
         {
             var newName = EditorUtility.SaveFilePanel("Rename Config", Path.GetDirectoryName(AssetDatabase.GetAssetPath(config)), config.name, "asset");
             if (string.IsNullOrEmpty(newName)) return;
-            
-            if (PathUtilities.TryMakeRelative(Path.GetDirectoryName(Application.dataPath), newName, out var relativePath))
+
+            var projectRoot = Path.GetDirectoryName(Application.dataPath);
+            var relativePath = Path.GetFullPath(newName).Replace(Path.GetFullPath(projectRoot!) + Path.DirectorySeparatorChar, "").Replace('\\', '/');
+
+            if (relativePath.StartsWith("Assets/") || relativePath.StartsWith("Packages/"))
             {
                 var assetPath = AssetDatabase.GetAssetPath(config);
                 var error = AssetDatabase.RenameAsset(assetPath, Path.GetFileNameWithoutExtension(relativePath));
@@ -136,7 +86,7 @@ namespace SiPVLib.Config.Editor.MasterWindow
                 {
                     AssetDatabase.SaveAssets();
                     AssetDatabase.Refresh();
-                    TrySelectMenuItemWithObject(config);
+                    TrySelectConfig(config);
                 }
             }
             else
@@ -151,36 +101,28 @@ namespace SiPVLib.Config.Editor.MasterWindow
             var folder = Path.GetDirectoryName(assetPath);
             var fileName = Path.GetFileNameWithoutExtension(assetPath);
             var extension = Path.GetExtension(assetPath);
-            
+
             var filePath = AssetDatabase.GenerateUniqueAssetPath(string.IsNullOrWhiteSpace(folder) ?
                 $"{fileName}_Copy{extension}" :
                 Path.Combine(folder, $"{fileName}_Copy{extension}"));
             AssetDatabase.CopyAsset(assetPath, filePath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            
+
             var newGameConfig = AssetDatabase.LoadAssetAtPath<GameConfig>(filePath);
             if (newGameConfig != null)
             {
-                TrySelectMenuItemWithObject(newGameConfig);
+                TrySelectConfig(newGameConfig);
             }
         }
 
         private static void DeleteConfig(GameConfig config, bool askConfirmation = true)
         {
-            if (askConfirmation)
-            {
-                if (!EditorUtility.DisplayDialog("Delete Config",
-                        $"Are you sure you want to delete '{config.name}'?", "Delete", "Cancel")) return;
-                
-                var assetPath = AssetDatabase.GetAssetPath(config);
-                AssetDatabase.DeleteAsset(assetPath);
-            }
-            else
-            {
-                var assetPath = AssetDatabase.GetAssetPath(config);
-                AssetDatabase.DeleteAsset(assetPath);
-            }
+            if (askConfirmation && !EditorUtility.DisplayDialog("Delete Config",
+                    $"Are you sure you want to delete '{config.name}'?", "Delete", "Cancel")) return;
+
+            var assetPath = AssetDatabase.GetAssetPath(config);
+            AssetDatabase.DeleteAsset(assetPath);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();

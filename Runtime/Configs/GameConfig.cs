@@ -1,6 +1,4 @@
-﻿#if ODIN_INSPECTOR
-using Sirenix.OdinInspector;
-#endif
+using Alchemy.Inspector;
 using UnityEngine;
 
 namespace SiPVLib.Config.Configs
@@ -10,52 +8,40 @@ namespace SiPVLib.Config.Configs
     /// <see cref="ConfigRefAttribute"/> lookups (resolved via the Editor-only Id cache) and a
     /// declared <see cref="ConfigLocation"/> describing which storage source is expected to serve it.
     /// </summary>
-#if ODIN_INSPECTOR
-    // With Odin installed, private/non-serialized fields are also serialized via Odin's serializer.
-    public class GameConfig : SerializedScriptableObject
-#else
     public class GameConfig : ScriptableObject
-#endif
     {
         // Basic info
-#if ODIN_INSPECTOR
-        [HorizontalGroup("Split", 0.5f)]
+        [HorizontalGroup("Split")]
         [BoxGroup("Split/Basic Info")]
-#endif
-#if UNITY_EDITOR && ODIN_INSPECTOR
+#if UNITY_EDITOR
         [ValidateInput(nameof(ValidateIdUnique), "Duplicate Id used by another config.")]
         [OnValueChanged(nameof(OnConfigEdited))]
 #endif
         [SerializeField] protected string _id;
 
-#if ODIN_INSPECTOR
         [BoxGroup("Split/Basic Info")]
-#endif
         [SerializeField] protected string _configName;
 
         // Storage settings
-#if ODIN_INSPECTOR
         [HorizontalGroup("Split")]
         [BoxGroup("Split/Storage Settings")]
-#endif
-#if UNITY_EDITOR && ODIN_INSPECTOR
+#if UNITY_EDITOR
         [OnValueChanged(nameof(OnConfigEdited))]
 #endif
         [SerializeField] protected bool _ignoreInBuild;
-#if UNITY_EDITOR && ODIN_INSPECTOR
-        [ValidateInput(nameof(ValidateLocation), "Actual config location is not match.")]
+
+#if UNITY_EDITOR
+        [ValidateInput(nameof(ValidateLocationField), "Actual config location is not match.")]
         [OnValueChanged(nameof(OnStoreLocationEdited))]
 #endif
-#if ODIN_INSPECTOR
         [BoxGroup("Split/Storage Settings")]
-        [HideIf(nameof(_ignoreInBuild))]
-#endif
+        [HideIf(nameof(IgnoreInBuild))]
         [SerializeField] protected ConfigLocation _storeLocation;
 
-#if ODIN_INSPECTOR
+        // Only meaningful when the config is actually stored remotely — showing it for
+        // Local/Resources/Addressable configs was pure noise.
         [BoxGroup("Split/Storage Settings")]
-        [HideIf(nameof(_ignoreInBuild))]
-#endif
+        [ShowIf(nameof(ShowRemoteConfigKey))]
         [SerializeField] protected string _remoteConfigKey;
 
         // ── Properties ───────────────────────────────────────────────────
@@ -65,6 +51,14 @@ namespace SiPVLib.Config.Configs
         public string ConfigName => _configName;
         public ConfigLocation StoreLocation => _storeLocation;
         public string RemoteConfigKey => _remoteConfigKey;
+
+        /// <summary>
+        /// Backs the inspector condition on <see cref="_remoteConfigKey"/>: only relevant when the
+        /// config is actually built and stored remotely. Checks the virtual <see cref="IgnoreInBuild"/>
+        /// property (not the raw field) so a subclass override — e.g. <see cref="EditorConfig"/>,
+        /// which is always excluded from build — is respected without needing its own override here.
+        /// </summary>
+        private bool ShowRemoteConfigKey => !IgnoreInBuild && _storeLocation == ConfigLocation.RemoteConfig;
 
 #if UNITY_EDITOR
 
@@ -77,7 +71,7 @@ namespace SiPVLib.Config.Configs
             _lastKnownLocation = _storeLocation;
         }
 
-        /// <summary>Backs the Odin ValidateInput warning on <see cref="_id"/> for live duplicate detection.</summary>
+        /// <summary>Backs the Alchemy ValidateInput warning on <see cref="_id"/> for live duplicate detection.</summary>
         private bool ValidateIdUnique(string id) => !ConfigRootEditorSync.HasDuplicateId(id, this);
 
         /// <summary>Rebuilds this config's ConfigRoot immediately after an Id/IgnoreInBuild edit.</summary>
@@ -98,9 +92,12 @@ namespace SiPVLib.Config.Configs
             _lastKnownLocation = _storeLocation;
         }
 
+        /// <summary>Backs the Alchemy ValidateInput warning on <see cref="_storeLocation"/>.</summary>
+        private bool ValidateLocationField(ConfigLocation location) => ValidateLocation(location);
+
         /// <summary>
         /// Checks that the asset's actual project location (folder / Addressable / Resources
-        /// entry) matches the declared <see cref="_storeLocation"/>. Backs the Odin ValidateInput
+        /// entry) matches the declared <see cref="_storeLocation"/>. Backs the Alchemy ValidateInput
         /// warning on the field so mismatches are caught in the Inspector rather than at runtime.
         /// </summary>
         public bool ValidateLocation(ConfigLocation location)
@@ -140,21 +137,21 @@ namespace SiPVLib.Config.Configs
         /// <summary>Override to report a validation problem shown in MasterWindow; empty means valid.</summary>
         public virtual string GetInvalidReason() => string.Empty;
 
-#if ODIN_INSPECTOR
         /// <summary>Icon shown in MasterWindow's menu tree; flags configs excluded from build.</summary>
         public Texture GetEditorIcon()
         {
-            return _ignoreInBuild ? Sirenix.Utilities.Editor.EditorIcons.X.Active : GetDefaultEditorIcon();
+            return IgnoreInBuild
+                ? UnityEditor.EditorGUIUtility.IconContent("d_winbtn_mac_close").image as Texture
+                : GetDefaultEditorIcon();
         }
 
         /// <summary>Override per subtype to show a more specific icon than the default Unity logo.</summary>
         protected virtual Texture GetDefaultEditorIcon()
         {
-            return Sirenix.Utilities.Editor.EditorIcons.UnityLogo;
+            return UnityEditor.EditorGUIUtility.IconContent("UnityLogo").image as Texture;
         }
 #endif
-#endif
-        
+
         /// <summary>
         /// Update this config with remote config value.
         /// Using reflection to set value to avoid direct dependency on remote config system.

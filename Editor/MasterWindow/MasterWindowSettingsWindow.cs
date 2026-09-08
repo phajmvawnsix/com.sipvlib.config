@@ -1,6 +1,4 @@
-﻿using Sirenix.Utilities;
-using Sirenix.Utilities.Editor;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace SiPVLib.Config.Editor.MasterWindow
@@ -23,7 +21,11 @@ namespace SiPVLib.Config.Editor.MasterWindow
         public static void ShowWindow()
         {
             var window = GetWindow<MasterWindowSettingsWindow>("Master Window Settings");
-            window.position = GUIHelper.GetEditorWindowRect().AlignCenter(600, 400);
+            const float width = 600f, height = 400f;
+            window.position = new Rect(
+                (Screen.currentResolution.width - width) / 2f,
+                (Screen.currentResolution.height - height) / 2f,
+                width, height);
         }
 
         private void OnEnable()

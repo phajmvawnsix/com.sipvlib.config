@@ -5,25 +5,19 @@
         "SiPV.Config",
         "GUID:69448af7b92c7f342b298e06a37122aa",
         "SiPV.Utilities",
-        "SiPV.Debugging"
+        "SiPV.Debugging",
+        "Alchemy",
+        "Alchemy.Editor"
     ],
     "includePlatforms": [
         "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "Sirenix.OdinInspector.Editor.dll",
-        "Sirenix.Utilities.Editor.dll",
-        "Sirenix.Utilities.dll",
-        "Sirenix.Serialization.dll",
-        "Sirenix.OdinInspector.Attributes.dll"
-    ],
+    "overrideReferences": false,
+    "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [
-        "ODIN_INSPECTOR"
-    ],
+    "defineConstraints": [],
     "versionDefines": [],
     "noEngineReferences": false
 }

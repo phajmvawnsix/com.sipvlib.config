@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 
 namespace SiPVLib.Config
 {
@@ -6,10 +7,13 @@ namespace SiPVLib.Config
     /// Runtime-safe attribute to reference a ConfigItem by storing only its Id in a string field.
     /// This attribute has no editor-only dependencies and can live in any assembly.
     /// The accompanying editor drawer (in an Editor folder) provides rich UI, drag & drop,
-    /// validation, and type filtering when the Unity Editor is present (Odin Inspector required).
+    /// validation, and type filtering when the Unity Editor is present.
+    ///
+    /// Derives from <see cref="PropertyAttribute"/> (a plain UnityEngine, not UnityEditor, type) —
+    /// required for <see cref="UnityEditor.PropertyDrawer.attribute"/> to resolve to this type.
     /// </summary>
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-    public class ConfigRefAttribute : Attribute
+    public class ConfigRefAttribute : PropertyAttribute
     {
         /// <summary>
         /// Optional type constraint. When supplied, only ConfigItems whose concrete type matches this

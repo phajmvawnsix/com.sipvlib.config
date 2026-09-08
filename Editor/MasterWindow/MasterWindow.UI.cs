@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using SiPVLib.Config.Configs;
 using SiPVLib.Debugging;
-using Sirenix.Utilities.Editor;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -11,71 +11,85 @@ namespace SiPVLib.Config.Editor.MasterWindow
 {
     public partial class MasterWindow
     {
-        protected override void OnBeginDrawEditors()
+        private void DrawToolbar()
         {
-            SirenixEditorGUI.BeginHorizontalToolbar();
+            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
 
-            if (SirenixEditorGUI.ToolbarButton(new GUIContent("Update Config Root")))
+            if (GUILayout.Button("Update Config Root", EditorStyles.toolbarButton))
             {
                 UpdateConfigRoot();
             }
 
-            if (SirenixEditorGUI.ToolbarButton(new GUIContent("Validate All")))
+            if (GUILayout.Button("Validate All", EditorStyles.toolbarButton))
             {
                 ValidateAllConfigs();
             }
 
-            if (SirenixEditorGUI.ToolbarButton(new GUIContent(EditorIcons.Refresh.Active)))
+            var refreshIcon = EditorGUIUtility.IconContent("Refresh");
+            if (GUILayout.Button(refreshIcon, EditorStyles.toolbarButton, GUILayout.Width(28)))
             {
                 ForceMenuTreeRebuild();
             }
 
+            var viewTypeLabel = _treeViewType == MenuTreeViewType.Hierarchical ? "Hierarchical" : "Root Folders";
+            if (GUILayout.Button(viewTypeLabel, EditorStyles.toolbarButton))
+            {
+                var newViewType = (MenuTreeViewType) (((int) _treeViewType + 1) % Enum.GetValues(typeof(MenuTreeViewType)).Length);
+                if (newViewType == _treeViewType) return;
+
+                _treeViewType = newViewType;
+                MasterWindowSettings.instance.menuTreeViewType = newViewType;
+                MasterWindowSettings.instance.SaveSettings();
+                ForceMenuTreeRebuild();
+            }
+
+            if (GUILayout.Button("Create", EditorStyles.toolbarButton))
+            {
+                var selectedConfig = _treeView?.GetSelectedConfig();
+                var targetFolder = selectedConfig != null
+                    ? System.IO.Path.GetDirectoryName(AssetDatabase.GetAssetPath(selectedConfig))?.Replace('\\', '/')
+                    : _rootFolderLocal;
+
+                ScriptableObjectCreator.ShowDialog<GameConfig>(string.IsNullOrEmpty(targetFolder) ? _rootFolderLocal : targetFolder, TrySelectConfig);
+            }
+
             GUILayout.FlexibleSpace();
 
-            var selected = MenuTree.Selection.FirstOrDefault();
+            var selected = _treeView?.GetSelectedConfig();
             if (selected != null)
             {
-                if (selected.Value is GameConfig configItem)
+                var invalidReason = selected.GetInvalidReason();
+                if (!string.IsNullOrWhiteSpace(invalidReason))
                 {
-                    var invalidReason = configItem.GetInvalidReason();
-                    if (!string.IsNullOrWhiteSpace(invalidReason))
-                    {
-                        var richTextStyle = new GUIStyle(GUI.skin.label) { richText = true };
-                        GUILayout.Label($"<color=red>{invalidReason}</color>", richTextStyle);
-
-                        GUIHelper.PushColor(Color.red);
-                        GUILayout.Label(new GUIContent(EditorIcons.UnityErrorIcon, invalidReason));
-                        GUIHelper.PopColor();
-                    }
+                    var errorIcon = EditorGUIUtility.IconContent("console.erroricon");
+                    GUILayout.Label(new GUIContent(errorIcon.image, invalidReason));
                 }
 
-                if (selected.Value is Object obj)
+                if (GUILayout.Button(selected.name, EditorStyles.toolbarButton))
                 {
-                    if (GUILayout.Button(obj.name))
-                    {
-                        Selection.activeObject = obj;
-                    }
-                }
-                else
-                {
-                    GUILayout.Label(selected.Name);
+                    Selection.activeObject = selected;
                 }
             }
-            
-            // Fill middle space
+
             GUILayout.FlexibleSpace();
-            
-            if (SirenixEditorGUI.ToolbarButton(new GUIContent("Settings")))
+
+            if (GUILayout.Button("Settings", EditorStyles.toolbarButton))
             {
                 MasterWindowSettingsWindow.ShowWindow();
-
                 EditorApplication.update += OnSettingsUpdate;
             }
-            
-            SirenixEditorGUI.EndHorizontalToolbar();
+
+            EditorGUILayout.EndHorizontal();
         }
-        
-        
+
+        private void TrySelectConfig(GameConfig config)
+        {
+            if (config == null) return;
+            ForceMenuTreeRebuild();
+            _treeView.SelectConfig(config);
+            Selection.activeObject = config;
+        }
+
         /// <summary>
         /// Scans every configured root folder for invalid configs (<see cref="GameConfig.IsValid"/>)
         /// and reports them in one place, instead of only surfacing a reason when a config happens
@@ -118,10 +132,10 @@ namespace SiPVLib.Config.Editor.MasterWindow
         private void OnSettingsUpdate()
         {
             EditorApplication.update -= OnSettingsUpdate;
-            
+
             var settings = MasterWindowSettings.instance;
             var isChanged = false;
-            
+
             if (_rootFolderLocal != settings.rootFolderLocal)
             {
                 _rootFolderLocal = settings.rootFolderLocal;
@@ -150,11 +164,11 @@ namespace SiPVLib.Config.Editor.MasterWindow
             {
                 _treeViewType = settings.menuTreeViewType;
                 isChanged = true;
-            }   
-            
+            }
+
             if (isChanged)
             {
-                ForceMenuTreeRebuild(); 
+                ForceMenuTreeRebuild();
             }
         }
     }

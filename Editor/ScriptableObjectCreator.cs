@@ -1,107 +1,132 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Sirenix.OdinInspector.Editor;
-using Sirenix.Utilities;
 using UnityEditor;
+using UnityEditor.IMGUI.Controls;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace SiPVLib.Config.Editor
 {
+    /// <summary>
+    /// Shows a searchable popup of every concrete <typeparamref name="T"/> subtype in the project,
+    /// then a save-file dialog for the chosen type. Used by MasterWindow's "Create" menu item.
+    /// </summary>
     public static class ScriptableObjectCreator
     {
-        public static void ShowDialog<T>(string folder, Action<T> onSuccess = null)
-            where T : ScriptableObject
+        public static void ShowDialog<T>(string folder, Action<T> onSuccess = null) where T : ScriptableObject
         {
-            var selector = new ScriptableObjectSelector<T>(folder, onSuccess);
+            var types = TypeCache.GetTypesDerivedFrom<T>()
+                .Where(t => !t.IsAbstract)
+                .OrderBy(GetMenuPath, StringComparer.Ordinal)
+                .ToArray();
 
-            if (selector.SelectionTree.EnumerateTree().Count() == 1)
+            if (types.Length == 0)
             {
-                selector.SelectionTree.EnumerateTree().First().Select();
-                selector.SelectionTree.Selection.ConfirmSelection();
+                EditorUtility.DisplayDialog("No Types Found", $"No concrete subclasses of {typeof(T).Name} found in the project.", "OK");
+                return;
+            }
+
+            if (types.Length == 1)
+            {
+                CreateAndSave(types[0], folder, onSuccess);
+                return;
+            }
+
+            TypeSelectorWindow.Show(types, GetMenuPath, type => CreateAndSave(type, folder, onSuccess));
+        }
+
+        /// <summary>Groups by <see cref="ConfigCategoryAttribute"/> if present, otherwise flat.</summary>
+        private static string GetMenuPath(Type type)
+        {
+            var category = type.GetCustomAttribute<ConfigCategoryAttribute>()?.Category;
+            return string.IsNullOrEmpty(category) ? type.Name : $"{category}/{type.Name}";
+        }
+
+        private static void CreateAndSave<T>(Type type, string folder, Action<T> onSuccess) where T : ScriptableObject
+        {
+            var instance = ScriptableObject.CreateInstance(type) as T;
+            if (instance == null) return;
+
+            var destination = folder.TrimEnd('/');
+
+            if (!Directory.Exists(destination))
+            {
+                Directory.CreateDirectory(destination);
+                AssetDatabase.Refresh();
+            }
+
+            destination = EditorUtility.SaveFilePanel("Save as", destination, type.Name, "asset");
+
+            if (string.IsNullOrEmpty(destination))
+            {
+                Object.DestroyImmediate(instance);
+                return;
+            }
+
+            var projectRoot = Path.GetDirectoryName(Application.dataPath);
+            var relative = Path.GetFullPath(destination).Replace(Path.GetFullPath(projectRoot!) + Path.DirectorySeparatorChar, "").Replace('\\', '/');
+
+            if (relative.StartsWith("Assets/") || relative.StartsWith("Packages/"))
+            {
+                AssetDatabase.CreateAsset(instance, relative);
+                AssetDatabase.Refresh();
+                onSuccess?.Invoke(instance);
             }
             else
             {
-                var currentEvent = Event.current;
-                if (currentEvent != null)
-                {
-                    selector.ShowInPopup(400);
-                    currentEvent.Use();
-                }
-                else
-                {
-                    selector.ShowInPopup(new Rect(Screen.width / 2f - 200, Screen.height / 2f, 400, 0));
-                }
+                Object.DestroyImmediate(instance);
+                EditorUtility.DisplayDialog("Invalid Path", "Assets must be created inside the Assets or Packages folder.", "OK");
             }
         }
 
-        private class ScriptableObjectSelector<T> : OdinSelector<Type> where T : ScriptableObject
+        /// <summary>Minimal searchable type picker, standing in for Odin's OdinSelector.</summary>
+        private class TypeSelectorWindow : EditorWindow
         {
-            private readonly Action<T> _onSuccess;
-            private readonly string _folder;
+            private Type[] _types;
+            private string[] _labels;
+            private Action<Type> _onSelected;
+            private SearchField _searchField;
+            private string _search = "";
+            private Vector2 _scroll;
 
-            public ScriptableObjectSelector(string folder, Action<T> onSuccess = null)
+            public static void Show(Type[] types, Func<Type, string> labelSelector, Action<Type> onSelected)
             {
-                this._onSuccess = onSuccess;
-                this._folder = folder;
-                this.SelectionConfirmed += this.ShowSaveFileDialog;
+                var window = CreateInstance<TypeSelectorWindow>();
+                window.titleContent = new GUIContent("Select Type");
+                window._types = types;
+                window._labels = types.Select(labelSelector).ToArray();
+                window._onSelected = onSelected;
+                window._searchField = new SearchField();
+
+                var size = new Vector2(400, 400);
+                window.position = new Rect(
+                    (Screen.currentResolution.width - size.x) / 2f,
+                    (Screen.currentResolution.height - size.y) / 2f,
+                    size.x, size.y);
+                window.ShowUtility();
             }
 
-            protected override void BuildSelectionTree(OdinMenuTree tree)
+            private void OnGUI()
             {
-                var scriptableObjectTypes = AssemblyUtilities.GetTypes(AssemblyCategory.ProjectSpecific)
-                    .Where(x => x.IsClass && !x.IsAbstract && x.InheritsFrom(typeof(T)));
+                _search = _searchField.OnGUI(_search);
 
-                tree.Selection.SupportsMultiSelect = false;
-                tree.Config.DrawSearchToolbar = true;
-                tree.AddRange(scriptableObjectTypes, GetMenuPath)
-                    .AddThumbnailIcons();
-            }
-
-            /// <summary>Groups by <see cref="ConfigCategoryAttribute"/> if present, otherwise flat.</summary>
-            private static string GetMenuPath(Type type)
-            {
-                var category = type.GetCustomAttribute<ConfigCategoryAttribute>()?.Category;
-                return string.IsNullOrEmpty(category) ? type.GetNiceName() : $"{category}/{type.GetNiceName()}";
-            }
-
-            private void ShowSaveFileDialog(IEnumerable<Type> selection)
-            {
-                var instance = ScriptableObject.CreateInstance(selection.FirstOrDefault()) as T;
-
-                if (instance == null) return;
-
-                var destination = this._folder.TrimEnd('/');
-
-                if (!Directory.Exists(destination))
+                _scroll = EditorGUILayout.BeginScrollView(_scroll);
+                for (var i = 0; i < _types.Length; i++)
                 {
-                    Directory.CreateDirectory(destination);
-                    AssetDatabase.Refresh();
-                }
+                    if (!string.IsNullOrEmpty(_search) &&
+                        _labels[i].IndexOf(_search, StringComparison.OrdinalIgnoreCase) < 0) continue;
 
-                destination = EditorUtility.SaveFilePanel("Save as", destination, instance.GetType().GetNiceName(), "asset");
-
-                if (!string.IsNullOrEmpty(destination) && PathUtilities.TryMakeRelative(Path.GetDirectoryName(Application.dataPath), destination, out destination))
-                {
-                    if (destination.StartsWith("Assets/") || destination.StartsWith("Packages/"))
+                    if (GUILayout.Button(_labels[i], EditorStyles.label))
                     {
-                        AssetDatabase.CreateAsset(instance, destination);
-                        AssetDatabase.Refresh();
-
-                        this._onSuccess?.Invoke(instance);
-                    }
-                    else
-                    {
-                        UnityEngine.Object.DestroyImmediate(instance);
-                        EditorUtility.DisplayDialog("Invalid Path", "Assets must be created inside the Assets or Packages folder.", "OK");
+                        var picked = _types[i];
+                        Close();
+                        _onSelected?.Invoke(picked);
                     }
                 }
-                else
-                {
-                    UnityEngine.Object.DestroyImmediate(instance);
-                }
+                EditorGUILayout.EndScrollView();
             }
         }
     }

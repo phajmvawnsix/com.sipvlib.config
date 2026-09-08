@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.0] - 2026-09-08
+
+Odin Inspector is no longer required anywhere in this package -- replaced by Alchemy (com.annulusgames.alchemy, MIT). GameConfig drops SerializedScriptableObject for plain ScriptableObject. MasterWindow is rewritten off OdinMenuEditorWindow/OdinMenuTree onto a standard UnityEditor.IMGUI.Controls.TreeView (MasterWindowTreeView), keeping search, drag-out to [ConfigRef] fields, create/rename/duplicate/delete, and both view modes (Hierarchical / Root Folders). ConfigRefAttributeDrawer and ScriptableObjectCreator's type picker are rewritten as plain PropertyDrawer/EditorWindow. ConfigRefAttribute now derives from UnityEngine.PropertyAttribute (required for CustomPropertyDrawer resolution).
+
+GameConfig field visibility fixes: _remoteConfigKey now only shows when StoreLocation is RemoteConfig (previously shown for every location -- noise for Local/Resources/Addressable). _storeLocation's hide condition and GetEditorIcon() now check the virtual IgnoreInBuild property instead of the raw field, so a subclass override (e.g. EditorConfig, always excluded from build) is respected instead of silently ignored.
+
 ## [1.2.3] - 2026-09-03
 
 Pin com.sipvlib.debugging/event/utilities and com.cysharp.unitask to semver versions

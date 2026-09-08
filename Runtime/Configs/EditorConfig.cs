@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace SiPVLib.Config.Configs
 {
@@ -6,10 +6,10 @@ namespace SiPVLib.Config.Configs
     {
         public override bool IgnoreInBuild => true;
 
-#if UNITY_EDITOR && ODIN_INSPECTOR
+#if UNITY_EDITOR
         protected override Texture GetDefaultEditorIcon()
         {
-            return Sirenix.Utilities.Editor.EditorIcons.OdinInspectorLogo;
+            return UnityEditor.EditorGUIUtility.IconContent("SettingsIcon").image as Texture;
         }
 #endif
     }

@@ -1,7 +1,5 @@
-﻿using System;
-#if ODIN_INSPECTOR
-using Sirenix.OdinInspector;
-#endif
+using System;
+using Alchemy.Inspector;
 using UnityEngine;
 
 namespace SiPVLib.Config.Compare
@@ -11,51 +9,45 @@ namespace SiPVLib.Config.Compare
     {
         [Tooltip("The type of value to compare.")]
         public GameValueType type;
-        
+
         [Tooltip("The mode of comparison.")]
         public CompareMode compareMode;
-        
+
         [Tooltip("The value to compare.")]
-#if ODIN_INSPECTOR
         [InspectorName("value")]
-        [ShowIf(nameof(type), GameValueType.Integer)]
-#endif
+        [ShowIf(nameof(IsInteger))]
         public long valueInteger;
 
         [Tooltip("The value to compare.")]
-#if ODIN_INSPECTOR
         [InspectorName("value")]
-        [ShowIf(nameof(type), GameValueType.FloatingPoint)]
-#endif
+        [ShowIf(nameof(IsFloatingPoint))]
         public decimal valueFloatingPoint;
 
         [Tooltip("The value to compare.")]
-#if ODIN_INSPECTOR
         [InspectorName("value")]
-        [ShowIf(nameof(type), GameValueType.String)]
-#endif
+        [ShowIf(nameof(IsString))]
         public string valueString;
 
         [Tooltip("The value to compare.")]
-#if ODIN_INSPECTOR
         [InspectorName("value")]
-        [ShowIf(nameof(type), GameValueType.Bool)]
-#endif
+        [ShowIf(nameof(IsBool))]
         public bool valueBool;
 
         [Tooltip("The custom comparer to compare.")]
-#if ODIN_INSPECTOR
         [InspectorName("comparer")]
-        [ShowIf(nameof(type), GameValueType.Structured)]
-#endif
+        [ShowIf(nameof(IsStructured))]
         [ConfigRef(typeof(ConfigCustomComparer))]
         public string comparerId;
 
         [Tooltip("The value to compare.")]
-#if ODIN_INSPECTOR
         [InspectorName("value")]
-        [ShowIf(nameof(type), GameValueType.Structured)]
-#endif
+        [ShowIf(nameof(IsStructured))]
         public string valueJson;
+
+        private bool IsInteger => type == GameValueType.Integer;
+        private bool IsFloatingPoint => type == GameValueType.FloatingPoint;
+        private bool IsString => type == GameValueType.String;
+        private bool IsBool => type == GameValueType.Bool;
+        private bool IsStructured => type == GameValueType.Structured;
     }
 }
